@@ -19,7 +19,7 @@ const authUser = async (req, res, next) => {
   const isAuthenticated = user?.authenticate(password);
 
   if (user && isAuthenticated) {
-    res.status(200).json({ user, token: generateToken(user.id) });
+    res.status(200).json({ user, token: generateToken(user.id, user.email) });
   } else {
     res.status(500).json({ error: "Incorrect email or password" });
   }
@@ -106,7 +106,7 @@ const createUser = async (req, res, next) => {
  */
 const updateUser = async (req, res, next) => {
   const userId = req.params.id;
-  const { username, email, password, isAdmin } = req.body;
+  const { username, email, password } = req.body;
   const user = await User.findByPk(userId);
 
   try {
@@ -118,7 +118,6 @@ const updateUser = async (req, res, next) => {
           username,
           email,
           password,
-          isAdmin,
         },
         {
           where: {
