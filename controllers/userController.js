@@ -1,5 +1,29 @@
 import { Op } from "sequelize";
 import User from "../models/UserModel.js";
+import generateToken from "../utils/generateToken.js";
+
+/**
+ * LOG IN USER
+ */
+const authUser = async (req, res, next) => {
+  const { email, password } = req.body;
+
+  // ambil user berdasarkan email
+  const user = await User.findOne({
+    where: {
+      email,
+    },
+  });
+
+  // cek password
+  const isAuthenticated = user?.authenticate(password);
+
+  if (user && isAuthenticated) {
+    res.status(200).json({ user, token: generateToken(user.id) });
+  } else {
+    res.status(500).json({ error: "Incorrect email or password" });
+  }
+};
 
 /**
  * GET ALL USERS
@@ -133,4 +157,4 @@ const deleteUser = async (req, res, next) => {
   }
 };
 
-export { getUsers, createUser, getUserById, updateUser, deleteUser };
+export { getUsers, createUser, getUserById, updateUser, deleteUser, authUser };
