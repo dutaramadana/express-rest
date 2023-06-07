@@ -78,9 +78,13 @@ const getAllPosts = async (req, res, next) => {
   }
 };
 
+/**
+ * CREATE POST
+ */
 const createPost = async (req, res, next) => {
   try {
     const userId = req.user.id;
+    const author = req.user.username;
     const { title, content } = req.body;
     const slug = title
       .replace(/[^\w\s]/gi, "")
@@ -89,10 +93,49 @@ const createPost = async (req, res, next) => {
 
     const post = await Post.create({ title, slug, content, userId });
 
-    res.status(201).json({ status: "CREATED", data: post });
+    const data = {
+      title: post.title,
+      slug: post.slug,
+      content: post.content,
+      author: author,
+      updatedAt: post.updatedAt,
+      createdAt: post.createdAt,
+    };
+
+    res.status(201).json({ httpStatus: 201, message: "CREATED", data });
   } catch (error) {
     res.status(500).json(error);
   }
 };
 
-export { getAllPosts, createPost };
+/**
+ * GET POST BY SLUG
+ */
+
+const getPost = async (req, res, next) => {
+  const slug = req.params.slug;
+
+  try {
+    const post = await Post.findOne({
+      where: { slug },
+      include: {
+        model: User,
+      },
+    });
+
+    const data = {
+      title: post.title,
+      slug: post.slug,
+      content: post.content,
+      author: post.user.username,
+      updatedAt: post.updatedAt,
+      createdAt: post.createdAt,
+    };
+
+    res.status(200).json({ httpStatus: 200, message: "OK", data });
+  } catch (error) {
+    res.status(404).json({ httpStatus: 404, message: "Content not found" });
+  }
+};
+
+export { getAllPosts, createPost, getPost };
