@@ -20,3 +20,6 @@
 # Backup files
 *~
 *.swp
+
+testApp.js
+index.html
