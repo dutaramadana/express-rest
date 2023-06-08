@@ -1,5 +1,6 @@
 import { Op } from "sequelize";
 import User from "../models/UserModel.js";
+import Post from "../models/PostModel.js";
 import generateToken from "../utils/generateToken.js";
 
 /**
@@ -156,4 +157,97 @@ const deleteUser = async (req, res, next) => {
   }
 };
 
-export { getUsers, createUser, getUserById, updateUser, deleteUser, authUser };
+/**
+ * GET USER PROFILE (USER DETAILS AND USER POST)
+ */
+const profile = async (req, res, next) => {
+  try {
+    const page = parseInt(req.query.page) || 0;
+    const limit = parseInt(req.query.limit) || 3;
+    const title = req.query.title || "";
+    const offset = limit * page;
+
+    const userId = req.user.id;
+
+    const totalRows = await Post.count({
+      where: {
+        userId,
+        title: {
+          [Op.like]: `%${title}%`,
+        },
+      },
+    });
+
+    const totalPage = Math.ceil(totalRows / limit);
+
+    const user = await User.findByPk(userId);
+    const userPost = await Post.findAll({
+      where: {
+        userId,
+        title: {
+          [Op.like]: `%${title}%`,
+        },
+      },
+      attributes: {
+        exclude: ["id", "userId"],
+      },
+      offset,
+      limit,
+    });
+
+    if (userPost.length === 0) {
+      res.status(200).json({ userDetails: user, userPost: "No Content" });
+    } else {
+      res.status(200).json({
+        userDetails: user,
+        userPost,
+        page,
+        limit,
+        totalRows,
+        totalPage,
+      });
+    }
+  } catch (error) {
+    res.status(500).json({ error: "Something wrong" });
+  }
+};
+
+/**
+ * UPDATE USER PROFILE
+ */
+const updateUserProfile = async (req, res, next) => {
+  try {
+    // get user from header
+    const userId = req.user.id;
+    const { username, email, password } = req.body;
+    const user = await User.findByPk(userId);
+    
+    if(user){
+      user.username = username || user.username
+      user.email = email || user.email
+
+      if(password){
+        user.password = password
+      }
+
+      const updatedUser = await user.save();
+      res.status(200).json({ updatedUser });
+      
+    } 
+    
+
+  } catch (error) {
+    res.status(500).json({ error });
+  }
+};
+
+export {
+  getUsers,
+  createUser,
+  getUserById,
+  updateUser,
+  deleteUser,
+  authUser,
+  profile,
+  updateUserProfile,
+};

@@ -5,13 +5,18 @@ import {
   deleteUser,
   getUserById,
   getUsers,
+  profile,
   updateUser,
+  updateUserProfile,
 } from "../controllers/userController.js";
 import { isAdmin, verify } from "../middlewares/authMiddleware.js";
 
 const router = express.Router();
 
 router.route("/").get(getUsers);
+
+router.route("/profile").get(verify, profile).put(verify, updateUserProfile);
+
 router
   .route("/:id")
   .get(getUserById)
