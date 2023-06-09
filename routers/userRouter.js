@@ -13,13 +13,13 @@ import { isAdmin, verify } from "../middlewares/authMiddleware.js";
 
 const router = express.Router();
 
-router.route("/").get(getUsers);
+router.route("/").get(verify, isAdmin, getUsers);
 
 router.route("/profile").get(verify, profile).put(verify, updateUserProfile);
 
 router
   .route("/:id")
-  .get(getUserById)
+  .get(verify, isAdmin, getUserById)
   .put(verify, isAdmin, updateUser)
   .delete(verify, isAdmin, deleteUser);
 router.post("/register", createUser);

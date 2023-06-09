@@ -4,9 +4,11 @@ import Post from "../models/PostModel.js";
 import generateToken from "../utils/generateToken.js";
 
 /**
- * LOG IN USER
+ * @description  LOG IN USER
+ * @route        POST /api/users/login
+ * @access       public 
  */
-const authUser = async (req, res, next) => {
+const authUser = async (req, res) => {
   const { email, password } = req.body;
 
   // ambil user berdasarkan email
@@ -27,9 +29,11 @@ const authUser = async (req, res, next) => {
 };
 
 /**
- * GET ALL USERS
+ * @description GET ALL USERS
+ * @route       GET /api/users
+ * @access      private/admin
  */
-const getUsers = async (req, res, next) => {
+const getUsers = async (req, res) => {
   // variabel dalam url berupa string, kita harus mengkonversi menjadi int
   const page = parseInt(req.query.page) || 0;
   const limit = parseInt(req.query.limit) || 5;
@@ -74,10 +78,12 @@ const getUsers = async (req, res, next) => {
 };
 
 /**
- * GET USER BY ID
+ * @description GET USER BY ID
+ * @route       GET /api/users/:id
+ * @access      private/admin
  */
 
-const getUserById = async (req, res, next) => {
+const getUserById = async (req, res) => {
   const userId = req.params.id;
   const user = await User.findByPk(userId);
 
@@ -89,9 +95,11 @@ const getUserById = async (req, res, next) => {
 };
 
 /**
- * CREATE USER
+ * @description CREATE USER
+ * @route       POST /api/users/register
+ * @access      public
  */
-const createUser = async (req, res, next) => {
+const createUser = async (req, res) => {
   const { username, email, password, isAdmin } = req.body;
 
   try {
@@ -103,9 +111,11 @@ const createUser = async (req, res, next) => {
 };
 
 /**
- * UPDATE USER BY ID
+ * @description UPDATE USER BY ID
+ * @route       PUT /api/users/:id
+ * @access      private/admin
  */
-const updateUser = async (req, res, next) => {
+const updateUser = async (req, res) => {
   const userId = req.params.id;
   const { username, email, password } = req.body;
   const user = await User.findByPk(userId);
@@ -136,10 +146,11 @@ const updateUser = async (req, res, next) => {
 };
 
 /**
- * DELETE USER BY ID
+ * @description DELETE USER BY ID
+ * @route       DELETE /api/users/:id
+ * @access      private/admin
  */
-
-const deleteUser = async (req, res, next) => {
+const deleteUser = async (req, res) => {
   const userId = req.params.id;
   const user = await User.findByPk(userId);
 
@@ -158,9 +169,11 @@ const deleteUser = async (req, res, next) => {
 };
 
 /**
- * GET USER PROFILE (USER DETAILS AND USER POST)
+ * @description GET USER PROFILE (USER DETAILS AND USER POST)
+ * @route       GET /api/users/profile
+ * @access      private
  */
-const profile = async (req, res, next) => {
+const profile = async (req, res) => {
   try {
     const page = parseInt(req.query.page) || 0;
     const limit = parseInt(req.query.limit) || 3;
@@ -203,7 +216,7 @@ const profile = async (req, res, next) => {
         userPost,
         page,
         limit,
-        totalRows,
+        totalPost: totalRows,
         totalPage,
       });
     }
@@ -213,9 +226,11 @@ const profile = async (req, res, next) => {
 };
 
 /**
- * UPDATE USER PROFILE
+ * @description UPDATE USER PROFILE
+ * @route       PUT /api/users/profile
+ * @access      private
  */
-const updateUserProfile = async (req, res, next) => {
+const updateUserProfile = async (req, res) => {
   try {
     // get user from header
     const userId = req.user.id;
