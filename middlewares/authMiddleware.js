@@ -28,4 +28,12 @@ const isAdmin = (req, res, next) => {
   }
 };
 
-export { verify, isAdmin };
+const localVariables = (req, res, next) => {
+  req.app.locals = {
+    otp: null,
+    resetSession: false,
+  };
+  next();
+};
+
+export { verify, isAdmin, localVariables };
