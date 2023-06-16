@@ -31,6 +31,7 @@ const isAdmin = (req, res, next) => {
 const localVariables = (req, res, next) => {
   req.app.locals = {
     otp: null,
+    passwordResetToken: null,
     resetSession: false,
   };
   next();

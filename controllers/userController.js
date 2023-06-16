@@ -2,11 +2,12 @@ import { Op } from "sequelize";
 import User from "../models/UserModel.js";
 import Post from "../models/PostModel.js";
 import generateToken from "../utils/generateToken.js";
+import jwt from "jsonwebtoken";
 
 /**
  * @description  LOG IN USER
  * @route        POST /api/users/login
- * @access       public 
+ * @access       public
  */
 const authUser = async (req, res) => {
   const { email, password } = req.body;
@@ -236,23 +237,121 @@ const updateUserProfile = async (req, res) => {
     const userId = req.user.id;
     const { username, email, password } = req.body;
     const user = await User.findByPk(userId);
-    
-    if(user){
-      user.username = username || user.username
-      user.email = email || user.email
 
-      if(password){
-        user.password = password
+    if (user) {
+      user.username = username || user.username;
+      user.email = email || user.email;
+
+      if (password) {
+        user.password = password;
       }
 
       const updatedUser = await user.save();
       res.status(200).json({ updatedUser });
-      
-    } 
-    
-
+    }
   } catch (error) {
     res.status(500).json({ error });
+  }
+};
+
+/**
+ * @description FORGOT PASSWORD
+ * @route       POST /api/users/forgot-password
+ * @access      public
+ */
+const forgotPassword = async (req, res, next) => {
+  const { email } = req.body;
+
+  try {
+    const user = await User.findOne({
+      where: { email },
+    });
+
+    if (!user) {
+      return res.status(404).send({ error: "user not found" });
+    }
+
+    req.app.locals.passwordResetToken = jwt.sign(
+      {
+        id: user.id,
+        email: user.email,
+      },
+      process.env.JWT_KEY,
+      {
+        expiresIn: "30s",
+      }
+    );
+
+    //http://localhost:3000/api/users/reset-password/:id/:passwordResetToken
+    const link = `${req.protocol}://${req.get("host")}/api/users/reset-password/${user.id}/${req.app.locals.passwordResetToken}`;
+    res.status(200).send({ user, link });
+  } catch (error) {
+    res.status(500).send({ error });
+  }
+};
+
+/**
+ * @description GET FORGOT PASSWORD LINK
+ * @route       /api/users/reset-password/:id/:passwordResetToken
+ * @access      private
+ */
+const getForgotPasswordLink = async (req, res, next) => {
+  const { id, passwordResetToken } = req.params;
+
+  if (passwordResetToken !== req.app.locals.passwordResetToken) {
+    return res.status(401).send({ error: "Invalid Password Reset Token!" });
+  }
+
+  try {
+    const payload = jwt.verify(passwordResetToken, process.env.JWT_KEY);
+    return res
+      .status(200)
+      .send({ id, passwordResetToken, payload: payload.email });
+  } catch (error) {
+    return res.status(500).send({ error });
+  }
+};
+
+/**
+ * @description POST RESET PASSWORD
+ * @route       /api/users/reset-password/:id/:passwordResetToken
+ * @access      private
+ */
+const resetPassword = async (req, res, next) => {
+  const { id, passwordResetToken } = req.params;
+  const { password, repeatPassword } = req.body;
+
+  try {
+    const user = await User.findByPk(id);
+    jwt.verify(passwordResetToken, process.env.JWT_KEY);
+
+    if (!user) {
+      return res.status(404).send({ error: "User not found" });
+    }
+
+    if (passwordResetToken !== req.app.locals.passwordResetToken) {
+      return res.status(401).send({ error: "Invalid Password Reset Token!" });
+    }
+
+    if (Object.keys(req.body).length === 0) {
+      return res.status(403).send({ error: "Password can not empty" });
+    } else if (password !== repeatPassword) {
+      return res.status(403).send({ error: "Password do not match" });
+    }
+
+    // reset password
+    user.password = password;
+    const updatedUser = await user.save();
+
+    // reset session, after the user changed password the link will be expired
+    req.app.locals.passwordResetToken = null;
+    req.app.locals.resetSession = true;
+
+    return res
+      .status(200)
+      .send({ status: 200, message: "Password changed", updatedUser });
+  } catch (error) {
+    res.status(500).send({ error });
   }
 };
 
@@ -265,4 +364,7 @@ export {
   authUser,
   profile,
   updateUserProfile,
+  forgotPassword,
+  getForgotPasswordLink,
+  resetPassword,
 };
